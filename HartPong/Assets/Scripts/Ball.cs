@@ -2,65 +2,50 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
-    public float initialSpeed = 5f;
+    public float speed = 10f;
+    public float paddleSpeedIncrease = 0.5f;
+    private Vector3 direction;
     private Rigidbody rb;
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        Launch();
+        float randomZ = Random.Range(-0.5f, 0.5f);
+        float randomX = Random.value < 0.5f ? 1f : -1f;
+        direction = new Vector3(randomX, 0f, randomZ).normalized; 
     }
-    public void Launch()
+    void FixedUpdate()
     {
-        float xDirection = Random.Range(-1f, 1f);
-        while(xDirection > -.2f && xDirection < .2f)
-        {
-            xDirection = Random.Range(-1f, 1f);
-        }
-        float zDirection = Random.Range(-1f, 1f);
-        Vector3 direction = new Vector3(xDirection, 0, zDirection).normalized;
-        rb.linearVelocity = direction * initialSpeed;
-    }
-    void ResetBall()
-    {
-        transform.position = Vector3.zero;
-        Launch();
+        rb.MovePosition(rb.position + direction * speed  * Time.fixedDeltaTime);
     }
     void OnCollisionEnter(Collision collision)
     {
-        if(collision.gameObject.CompareTag("Player"))
+        if(collision.gameObject.CompareTag("Wall"))
         {
-            float relativeIntersectZ = (transform.position.z - collision.transform.position.z) / collision.collider.bounds.size.z;
-            Debug.Log($"relativeIntersectZ: {relativeIntersectZ}");
-            float maxReflectionAngle = 75f;
-            float reflectionAngle = relativeIntersectZ * maxReflectionAngle;
-            Debug.Log($"reflection Angle: {reflectionAngle}");
-            Vector3 paddleForward = collision.transform.right;
-            Vector3 reflectionNormal = Quaternion.AngleAxis(-reflectionAngle, Vector3.up) * paddleForward;
-            Debug.Log($"reflection normal: {reflectionNormal}");
-            float originalSpeed = previousVelocity.magnitude;
-            Vector3 currentDirection = previousVelocity.normalized;
-            Vector3 newDirection = Vector3.Reflect(currentDirection, reflectionNormal);
-            Debug.Log($"newDirection: {newDirection}");
-            rb.linearVelocity = newDirection.normalized * (originalSpeed * 2);
-            rb.AddForce(newDirection.normalized * 0.5f, ForceMode.Impulse);
+            //Debug.Log("Hit Wall");
+            ContactPoint contact = collision.contacts[0];
+            direction = Vector3.Reflect(direction, contact.normal); 
         }
-        else if(collision.gameObject.CompareTag("Wall"))
+        else if(collision.gameObject.CompareTag("Player"))
         {
-            Vector3 normal = collision.contacts[0].normal;
-            Vector3 newDirection = Vector3.Reflect(previousVelocity.normalized, normal);
-            float newSpeed = previousVelocity.magnitude;
-            rb.linearVelocity = newDirection.normalized * newSpeed; 
-            rb.AddForce(newDirection.normalized * 0.3f, ForceMode.Impulse);
+            speed += paddleSpeedIncrease;
+            ContactPoint contact = collision.contacts[0];
+            Transform paddleTransform = collision.transform;
+            Collider paddleCollider = collision.collider;
+            float hitPointZ = contact.point.z;
+            float paddleCenterZ = paddleTransform.position.z;
+            float offset = hitPointZ - paddleCenterZ;
+            float paddleHeight = paddleCollider.bounds.size.z;
+            float normalizedOffset = offset / (paddleHeight / 2f);
+            normalizedOffset = Mathf.Clamp(normalizedOffset, -1f, 1f);
+            direction.x = -direction.x;
+            direction.z = normalizedOffset;
+            direction = direction.normalized;
         }
     }
-    private Vector3 previousVelocity;
-    void FixedUpdate()
+    public void ResetBall(Vector3 newDirection, float newSpeed)
     {
-        previousVelocity = rb.linearVelocity;
-        if(transform.position.x > 25 || transform.position.x < -25)
-        {
-            ResetBall();
-        }
+        transform.position = Vector3.zero;
+        speed = newSpeed;
+        direction = newDirection.normalized;
     }
 }
