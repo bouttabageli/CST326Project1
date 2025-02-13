@@ -24,5 +24,9 @@ public class GoalTrigger : MonoBehaviour
             // If this is the left goal trigger, then the left player got scored on.
             gameManager.ScorePoint(isLeftGoal);
         }
+        else if(other.CompareTag("PowerUp"))
+        {
+            Destroy(other.gameObject);
+        }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -19,6 +20,16 @@ public class GameManager : MonoBehaviour
 
     // This vector will store the direction the ball should be served.
     private Vector3 serveDirection;
+    public GameObject[] powerUpPrefabs;
+    public float minSpawnTime = 5f;
+    public float maxSpawnTime = 15f;
+    public Vector2 spawnXRange = new Vector2(-8f, 8f);
+    public Vector2 spawnZRange = new Vector2(-4f, 4f);
+
+    void Start()
+    {
+        StartCoroutine(SpawnPowerUps());
+    }
 
     /// Call this when a goal is scored.
     /// Parameter: scoredOnLeft is true if the left goal trigger was hit,
@@ -55,12 +66,20 @@ public class GameManager : MonoBehaviour
     void UpdateScoreUI()
     {
         if (leftScoreText != null)
+        {
+            float t = Mathf.Clamp01((float)leftPlayerScore/10f);
+            leftScoreText.color = Color.Lerp(Color.white, Color.red, t);
             leftScoreText.text = leftPlayerScore.ToString();
+        }
         if (rightScoreText != null)
+        {
+            float t = Mathf.Clamp01((float)rightPlayerScore/10f);
+            rightScoreText.color = Color.Lerp(Color.white, Color.red, t);
             rightScoreText.text = rightPlayerScore.ToString();
+        }
     }
 
-    void ResetBall()
+    public void ResetBall()
     {
         ball.ResetBall(serveDirection, initialBallSpeed);
     }
@@ -78,6 +97,22 @@ public class GameManager : MonoBehaviour
         else
         {
             return false;
+        }
+    }
+    IEnumerator SpawnPowerUps()
+    {
+        while(true)
+        {
+            float waitTime = Random.Range(minSpawnTime, maxSpawnTime);
+            yield return new WaitForSeconds(waitTime);
+            if(powerUpPrefabs.Length > 0)
+            {
+                GameObject prefab = powerUpPrefabs[Random.Range(0, powerUpPrefabs.Length)];
+                float randomX = Random.Range(spawnXRange.x, spawnXRange.y);
+                float randomZ = Random.Range(spawnZRange.x, spawnZRange.y);
+                Vector3 spawnPosition = new Vector3(randomX, 0f, randomZ);
+                Instantiate(prefab, spawnPosition, Quaternion.identity);
+            }
         }
     }
 }

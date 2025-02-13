@@ -7,6 +7,8 @@ TagManager:
   - Wall
   - Ball
   - Goal
+  - PowerUp
+  - OOB
   layers:
   - Default
   - TransparentFX

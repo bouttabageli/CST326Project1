@@ -2,13 +2,24 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
+    //speed settings
     public float speed = 10f;
     public float paddleSpeedIncrease = 0.5f;
+    //movement variables
     private Vector3 direction;
     private Rigidbody rb;
+    //sound settings
+    public AudioClip paddleHitSound;
+    private AudioSource audioSource;
+    //used to adjust pitch relative to starting speed
+    private float baseSpeed;
+    private float basePower;
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        audioSource = GetComponent<AudioSource>();
+        baseSpeed = speed;
+        basePower = paddleSpeedIncrease;
         float randomZ = Random.Range(-0.5f, 0.5f);
         float randomX = Random.value < 0.5f ? 1f : -1f;
         direction = new Vector3(randomX, 0f, randomZ).normalized; 
@@ -27,6 +38,10 @@ public class Ball : MonoBehaviour
         }
         else if(collision.gameObject.CompareTag("Player"))
         {
+            float pitch = 1f + ((speed - baseSpeed)/baseSpeed) * 0.5f;
+            pitch = Mathf.Clamp(pitch, 0.8f, 1.5f);
+            audioSource.pitch = pitch;
+            audioSource.PlayOneShot(paddleHitSound);
             speed += paddleSpeedIncrease;
             ContactPoint contact = collision.contacts[0];
             Transform paddleTransform = collision.transform;
@@ -47,5 +62,9 @@ public class Ball : MonoBehaviour
         transform.position = Vector3.zero;
         speed = newSpeed;
         direction = newDirection.normalized;
+    }
+    public float getBasePower()
+    {
+        return basePower;
     }
 }
